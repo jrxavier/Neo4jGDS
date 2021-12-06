@@ -1,0 +1,91 @@
+# Configuraçao Inicial do Neo4j
+dbms.security.procedures.unrestricted=gds.*
+dbms.security.procedures.allowlist=apoc.coll.*,apoc.load.*,gds.*
+
+
+// Estrutura de uma chamada a funcão GDS
+gds.<tier>.<algo>.<write|stream>(graphName, configuration)
+
+
+// Defining the projected graph
+
+# named projected graph
+CALL gds.graph.create(
+    graphName::STRING, 
+    nodeProjection::STRING, LIST or MAP,
+    relationshipProjection::STRING, LIST or MAP,
+    configuration::MAP
+)
+
+CALL gds.graph.create("projGraphAll", "*", "*")
+
+//to select all nodes with the  User label and all relationships with the FOLLOWS type, you can use the following:
+CALL gds.graph.create("myProjectedGraph", "User", "FOLLOWS")
+
+
+# Cypher Projections
+
+// It enables us to create relationships on the fly that will only be created in the projected graph and not in the Neo4j graph
+CALL gds.graph.create.cypher(
+    graphName::STRING,
+    nodeQuery::STRING,
+    relationshipQuery::STRING,
+    configuration::MAP
+)
+
+// Exemplo
+// Cypher projections are really useful to add relationships or properties on the fly in the projected graph.
+CALL gds.graph.create.cypher(
+    "myProjectedCypherGraph",
+    "MATCH (u:User) RETURN id(u) as id",
+    "MATCH (u:User)-[:FOLLOWS]->(v:User) RETURN id(u) as source, id(v) as destination"
+)
+
+#Path Finding
+Importante! O algorithm considera a direção das relações bem como um pesso associado
+Para eliminar a direção, na criação do grafo precisamos definir a orientação como "UNDIRECTED"
+Exemplo aplicado ao Grafo de Demandas GIIN:
+
+CALL gds.graph.create("grafo", "*", {
+           ROAD: {
+               type: '*',
+               orientation: 'UNDIRECTED',
+               properties: "custo"
+         }
+     }
+)
+
+# Uso do algoritmo para pesquisar o caminho entre duas pessoas
+MATCH (source:PESSOA {email: 'AryD@cvm.gov.br'}), (target:PESSOA {email: 'ana.gabriela@cvm.gov.br'})
+CALL gds.shortestPath.dijkstra.stream('grafo', {
+    sourceNode: source,
+    targetNode: target,
+    relationshipWeightProperty: 'custo'
+})
+YIELD index, sourceNode, targetNode, totalCost, nodeIds, costs, path
+RETURN
+    index,
+    gds.util.asNode(sourceNode).name AS sourceNodeName,
+    gds.util.asNode(targetNode).name AS targetNodeName,
+    totalCost,
+    [nodeId IN nodeIds | gds.util.asNode(nodeId).name] AS nodeNames,
+    costs,
+    nodes(path) as path
+ORDER BY index
+
+
+
+# Measure node importance
+
+
+# Identify communities of nodes
+
+
+# perform link prediction
+
+
+# graph embedding
+
+
+
+

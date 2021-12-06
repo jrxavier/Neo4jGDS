@@ -1,0 +1,16 @@
+# Funções
+
+//To get the list of available functions in your running Neo4j instance
+CALL dbms.functions()
+
+//Uso na geracao de uuid
+RETURN randomUUID()
+CREATE (:Node {uuid: randomUUID()})
+
+# Procedures
+
+CALL dbms.procedures()
+
+//  list of labels used in the active graph
+CALL db.labels()
+
